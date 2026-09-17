@@ -1,123 +1,32 @@
-import React, { useEffect, useState } from 'react';
-import { MessageSquare, RefreshCw, ShieldCheck, Sparkles, HelpCircle, HeartHandshake } from 'lucide-react';
+import React, { useState } from 'react';
+import { DiscussionEmbed } from 'disqus-react';
+import { MessageSquare, RefreshCw, ShieldCheck, Sparkles, HeartHandshake, ExternalLink } from 'lucide-react';
 
-declare global {
-  interface Window {
-    disqus_config?: (this: {
-      page: {
-        url?: string;
-        identifier?: string;
-        title?: string;
-      };
-    }) => void;
-    DISQUS?: {
-      reset: (options: {
-        reload: boolean;
-        config?: (this: {
-          page: {
-            url?: string;
-            identifier?: string;
-            title?: string;
-          };
-        }) => void;
-      }) => void;
-    };
-  }
-}
-
-// Canonical values for Disqus thread
+// Real fixed canonical configuration values for Disqus thread
+const DISQUS_SHORTNAME = 'jasminep';
 const DISQUS_PAGE_IDENTIFIER = 'sg-transport-hub-talk-to-us';
-const DISQUS_SHORTNAME_URL = 'https://jasminep.disqus.com/embed.js';
+const DISQUS_PAGE_URL = 'https://jvvsmne.github.io/mrt-bus-v1/talk-to-us';
+const DISQUS_PAGE_TITLE = 'Talk to Us - Singapore Transit Network & Live Community';
 
 export function TalkToUs(): React.ReactElement {
-  const [isResetting, setIsResetting] = useState<boolean>(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // Key to force complete remount/reload of the Disqus React component if requested
+  const [threadKey, setThreadKey] = useState<number>(() => Date.now());
+  const [isReloading, setIsReloading] = useState<boolean>(false);
 
-  // Derive fixed canonical URL based on window location or domain
-  const getPageUrl = (): string => {
-    if (typeof window !== 'undefined' && window.location.origin) {
-      return `${window.location.origin}/talk-to-us`;
-    }
-    return 'https://sg-transport-hub.chemistryteam.com/talk-to-us';
+  const handleManualReload = () => {
+    setIsReloading(true);
+    setThreadKey(Date.now());
+    setTimeout(() => {
+      setIsReloading(false);
+    }, 600);
   };
 
-  const loadOrReloadDisqus = () => {
-    setIsResetting(true);
-    setLoadError(null);
-
-    const pageUrl = getPageUrl();
-    const pageIdentifier = DISQUS_PAGE_IDENTIFIER;
-
-    try {
-      if (typeof window !== 'undefined' && window.DISQUS) {
-        // SPA reload: call DISQUS.reset with updated configuration
-        window.DISQUS.reset({
-          reload: true,
-          config: function () {
-            this.page.identifier = pageIdentifier;
-            this.page.url = pageUrl;
-            this.page.title = 'Talk to Us - Singapore Transit Network';
-          },
-        });
-        setTimeout(() => setIsResetting(false), 400);
-      } else {
-        // Initial setup: configure global disqus_config and inject script
-        window.disqus_config = function () {
-          this.page.url = pageUrl;
-          this.page.identifier = pageIdentifier;
-          this.page.title = 'Talk to Us - Singapore Transit Network';
-        };
-
-        const existingScript = document.getElementById('disqus-embed-script') as HTMLScriptElement | null;
-        if (!existingScript) {
-          const d = document;
-          const s = d.createElement('script');
-          s.id = 'disqus-embed-script';
-          s.src = DISQUS_SHORTNAME_URL;
-          s.setAttribute('data-timestamp', String(+new Date()));
-          s.async = true;
-          s.onload = () => {
-            setIsResetting(false);
-          };
-          s.onerror = () => {
-            setIsResetting(false);
-            setLoadError('Disqus could not be loaded. Please ensure third-party cookies/scripts are allowed.');
-          };
-          (d.head || d.body).appendChild(s);
-        } else {
-          // If script element exists but DISQUS is not ready yet, listen for load
-          existingScript.addEventListener('load', () => {
-            if (window.DISQUS) {
-              window.DISQUS.reset({
-                reload: true,
-                config: function () {
-                  this.page.identifier = pageIdentifier;
-                  this.page.url = pageUrl;
-                  this.page.title = 'Talk to Us - Singapore Transit Network';
-                },
-              });
-            }
-            setIsResetting(false);
-          });
-          setTimeout(() => setIsResetting(false), 500);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load or reset Disqus:', err);
-      setIsResetting(false);
-    }
+  const disqusConfig = {
+    url: DISQUS_PAGE_URL,
+    identifier: DISQUS_PAGE_IDENTIFIER,
+    title: DISQUS_PAGE_TITLE,
+    language: 'en',
   };
-
-  useEffect(() => {
-    // Ensure #disqus_thread is mounted in DOM before initializing
-    const timer = setTimeout(() => {
-      loadOrReloadDisqus();
-    }, 50);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, []);
 
   return (
     <div id="talk-to-us-container" className="space-y-6">
@@ -138,21 +47,33 @@ export function TalkToUs(): React.ReactElement {
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
-                Share your daily commute feedback, report transport service updates, ask commuter questions, or leave suggestions for our team.
+                Share your daily commute feedback, report transit service delays, ask questions, or leave suggestions for the Singapore transit app.
               </p>
             </div>
           </div>
 
-          <button
-            id="btn-reload-disqus"
-            onClick={loadOrReloadDisqus}
-            disabled={isResetting}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 transition-colors disabled:opacity-50 cursor-pointer shrink-0"
-            title="Reload comments thread"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin text-indigo-600' : ''}`} />
-            <span>{isResetting ? 'Reloading...' : 'Reload Comments'}</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              id="btn-reload-disqus"
+              onClick={handleManualReload}
+              disabled={isReloading}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 transition-colors disabled:opacity-50 cursor-pointer"
+              title="Force reload comments thread"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin text-indigo-600' : ''}`} />
+              <span>{isReloading ? 'Reloading...' : 'Reload Comments'}</span>
+            </button>
+
+            <a
+              href="https://jasminep.disqus.com"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+            >
+              <span>Disqus Channel</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
         </div>
 
         {/* Informational Cards */}
@@ -161,41 +82,49 @@ export function TalkToUs(): React.ReactElement {
             <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
             <div>
               <div className="font-bold text-slate-800">Community Respect</div>
-              <div className="text-[11px] text-slate-500">Keep feedback constructive and civil for all commuters.</div>
+              <div className="text-[11px] text-slate-500">Keep discussions helpful, respectful, and focused on transit.</div>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
             <HeartHandshake className="w-4 h-4 text-indigo-600 shrink-0" />
             <div>
-              <div className="font-bold text-slate-800">Transit Inquiries</div>
-              <div className="text-[11px] text-slate-500">Discuss MRT/LRT delays, bus arrival observations & route tips.</div>
+              <div className="font-bold text-slate-800">Commuter Tips</div>
+              <div className="text-[11px] text-slate-500">Share optimal transfer points, bus timings, and travel hacks.</div>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
             <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
             <div>
-              <div className="font-bold text-slate-800">Real-Time Sync</div>
-              <div className="text-[11px] text-slate-500">Powered by Disqus universal discussion infrastructure.</div>
+              <div className="font-bold text-slate-800">React Framework</div>
+              <div className="text-[11px] text-slate-500">Integrated with official disqus-react SPA lifecycle hooks.</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Discussion Thread Area */}
+      {/* Discussion Thread Card */}
       <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs">
-        {loadError && (
-          <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
-            <HelpCircle className="w-4 h-4 text-amber-700 shrink-0" />
-            <span>{loadError}</span>
+        <div className="mb-4 pb-3 border-b border-slate-100 flex items-center justify-between">
+          <div className="text-xs font-semibold text-slate-700">
+            Thread Channel: <span className="font-mono text-indigo-600">{DISQUS_SHORTNAME}</span>
           </div>
-        )}
+          <div className="text-[11px] text-slate-400 font-mono">
+            ID: {DISQUS_PAGE_IDENTIFIER}
+          </div>
+        </div>
 
-        {/* Required Disqus Container */}
-        <div id="disqus_thread" className="min-h-[360px]" />
+        {/* Official disqus-react DiscussionEmbed */}
+        <div className="min-h-[380px]">
+          <DiscussionEmbed
+            key={threadKey}
+            shortname={DISQUS_SHORTNAME}
+            config={disqusConfig}
+          />
+        </div>
 
-        {/* Fallback for disabled JavaScript */}
+        {/* Fallback for noscript */}
         <noscript>
           Please enable JavaScript to view the{' '}
           <a href="https://disqus.com/?ref_noscript" rel="noreferrer" target="_blank">
@@ -206,3 +135,4 @@ export function TalkToUs(): React.ReactElement {
     </div>
   );
 }
+
