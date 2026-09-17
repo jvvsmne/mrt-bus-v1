@@ -52,7 +52,6 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
   const [toStationName, setToStationName] = useState<string>('Marina Bay');
   const [applyPeakFactor, setApplyPeakFactor] = useState<boolean>(true);
   const [simulateIncident, setSimulateIncident] = useState<MRTLineId | ''>('');
-  const [lineFilter, setLineFilter] = useState<'ALL' | 'MRT' | 'LRT'>('ALL');
   const [showScheduleModal, setShowScheduleModal] = useState<boolean>(false);
   const [showGtfsModal, setShowGtfsModal] = useState<boolean>(false);
 
@@ -124,14 +123,6 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
     });
     return { mrtStationsList: mrt, lrtStationsList: lrt };
   }, []);
-
-  // Filtered lines for display in the status bar (backed by live GTFS feed)
-  const displayedLines = useMemo(() => {
-    return (Object.values(liveLines) as MRTLineInfo[]).filter(line => {
-      if (lineFilter === 'ALL') return true;
-      return line.type === lineFilter;
-    });
-  }, [liveLines, lineFilter]);
 
   const quickRoutes = [
     { label: 'West to CBD', from: 'Jurong East', to: 'Marina Bay' },
@@ -293,108 +284,6 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
         </div>
       </div>
 
-      {/* MRT & LRT Lines Live Status Header with Line Filter Tabs */}
-      <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3.5">
-          <div className="flex items-center gap-2">
-            <Train className="w-4 h-4 text-rose-600" />
-            <h2 className="text-sm font-bold text-slate-900">
-              Singapore Rail Transit Network Live Status (MRT & LRT)
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600">
-            <button
-              id="filter-line-all"
-              onClick={() => setLineFilter('ALL')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                lineFilter === 'ALL'
-                  ? 'bg-white text-slate-900 shadow-xs font-bold'
-                  : 'hover:text-slate-900'
-              }`}
-            >
-              All Lines (9)
-            </button>
-            <button
-              id="filter-line-mrt"
-              onClick={() => setLineFilter('MRT')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                lineFilter === 'MRT'
-                  ? 'bg-rose-600 text-white shadow-xs font-bold'
-                  : 'hover:text-slate-900'
-              }`}
-            >
-              MRT Main (6)
-            </button>
-            <button
-              id="filter-line-lrt"
-              onClick={() => setLineFilter('LRT')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                lineFilter === 'LRT'
-                  ? 'bg-emerald-700 text-white shadow-xs font-bold'
-                  : 'hover:text-slate-900'
-              }`}
-            >
-              LRT Feeders (3)
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-2.5">
-          {displayedLines.map(line => {
-            const hasSimulatedIncident = simulateIncident === line.id;
-            const status = hasSimulatedIncident
-              ? 'Speed Restriction'
-              : line.status;
-            const isNormal = status === 'Normal Service';
-
-            return (
-              <div
-                key={line.id}
-                className={`p-2.5 rounded-xl border transition-all ${
-                  isNormal
-                    ? 'bg-slate-50/70 border-slate-200'
-                    : 'bg-amber-50 border-amber-300'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span
-                    className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
-                    style={{ backgroundColor: line.color }}
-                  >
-                    {line.code}
-                  </span>
-                  <span
-                    className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider ${
-                      line.type === 'LRT'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    {line.type}
-                  </span>
-                </div>
-                <div className="text-xs font-bold text-slate-800 truncate" title={line.name}>
-                  {line.name}
-                </div>
-                <div className="flex items-center justify-between mt-1 text-[10px]">
-                  <span
-                    className={`font-medium ${
-                      isNormal ? 'text-emerald-700' : 'text-amber-800 font-bold'
-                    }`}
-                  >
-                    {status}
-                  </span>
-                  <span className="text-slate-400 font-mono text-[9px]">
-                    {line.operator}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Main Grid: Journey Planner & Platform Live Arrivals */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Journey Input & Settings (5 cols) */}
@@ -545,12 +434,12 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
             </div>
           </div>
 
-          {/* Station Live Platform Arrival Timings & Carriage Crowd Visualizer */}
+          {/* Station Live Platform Arrival Timings */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Platform Arrivals & Carriage Occupancy
+                  Platform Arrivals
                 </span>
                 <div className="flex items-center gap-2">
                   <h4 className="text-xs sm:text-sm font-bold text-slate-900">
@@ -606,7 +495,7 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
               </div>
             )}
 
-            {/* Platform arrivals with carriage load bars */}
+            {/* Platform arrivals */}
             <div className="space-y-2.5">
               {activeStation.platformArrivals?.map((platform, idx) => {
                 const lineInfo = MRT_LINES[platform.line];
@@ -642,49 +531,6 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
                         </span>
                       </div>
                     </div>
-
-                    {/* Carriage occupancy graphic */}
-                    {platform.carriages && platform.carriages.length > 0 && (
-                      <div className="pt-2 border-t border-slate-200/60">
-                        <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-                          <span className="font-semibold text-slate-600">
-                            Live Train Carriage Crowding ({platform.carriages.length} cars):
-                          </span>
-                          <span className="text-slate-400">Head → Tail</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {platform.carriages.map((level, cIdx) => (
-                            <div
-                              key={cIdx}
-                              className="flex-1 text-center py-1 rounded text-[9px] font-bold border transition-colors"
-                              style={{
-                                backgroundColor:
-                                  level === 'High'
-                                    ? '#ffe4e6'
-                                    : level === 'Moderate'
-                                    ? '#fef3c7'
-                                    : '#dcfce7',
-                                borderColor:
-                                  level === 'High'
-                                    ? '#f43f5e'
-                                    : level === 'Moderate'
-                                    ? '#f59e0b'
-                                    : '#22c55e',
-                                color:
-                                  level === 'High'
-                                    ? '#9f1239'
-                                    : level === 'Moderate'
-                                    ? '#92400e'
-                                    : '#166534',
-                              }}
-                              title={`Car ${cIdx + 1}: ${level} crowd`}
-                            >
-                              C{cIdx + 1}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
