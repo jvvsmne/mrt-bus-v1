@@ -1,0 +1,6 @@
+{
+  "name": "SG Transport & Parking Hub",
+  "description": "Consolidated Singapore public transport and parking monitor: live bus arrival timings (SBS Transit, SMRT), MRT train tracking and travel duration calculator, and real-time carpark occupancy updates across Singapore.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
