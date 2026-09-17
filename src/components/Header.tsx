@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, MapPin, Clock, ShieldCheck, Bus, Train, LayoutGrid } from 'lucide-react';
+import { RefreshCw, MapPin, Clock, ShieldCheck, Bus, Train, LayoutGrid, MessageSquare } from 'lucide-react';
 import { SingaporeRegion, TransportMode } from '../types';
 
 interface HeaderProps {
@@ -159,6 +159,19 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Train className="w-4 h-4" />
             <span>MRT & LRT Tracking</span>
+          </button>
+
+          <button
+            id="tab-btn-talk"
+            onClick={() => onTabChange('talk')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
+              activeTab === 'talk'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Talk to Us</span>
           </button>
         </nav>
       </div>

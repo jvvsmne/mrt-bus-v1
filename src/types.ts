@@ -1,4 +1,4 @@
-export type TransportMode = 'all' | 'bus' | 'mrt';
+export type TransportMode = 'all' | 'bus' | 'mrt' | 'talk';
 
 export type SingaporeRegion = 'All' | 'Central' | 'East' | 'North' | 'North-East' | 'West';
 

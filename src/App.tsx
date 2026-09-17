@@ -5,6 +5,7 @@ import { MrtPlanner } from './components/MrtPlanner';
 import { InteractiveMap } from './components/InteractiveMap';
 import { QuickStatsBar } from './components/QuickStatsBar';
 import { LiveServerlessPanels } from './components/LiveServerlessPanels';
+import { TalkToUs } from './components/TalkToUs';
 import { BUS_STOPS } from './data/busData';
 import { MRT_STATIONS } from './data/mrtData';
 import { BusStop, MRTStation, SingaporeRegion, TransportMode } from './types';
@@ -225,6 +226,11 @@ export default function App() {
             />
           </div>
         )}
+
+        {/* Talk to Us Tab */}
+        {activeTab === 'talk' && (
+          <TalkToUs />
+        )}
       </main>
 
       {/* Footer */}
@@ -232,7 +238,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col gap-3">
           <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-slate-600">
             <div className="flex items-center gap-2 font-semibold text-slate-800">
-              <span>SG Transport & Parking Hub</span>
+              <span>SG Transport Hub</span>
               <span>•</span>
               <span className="font-normal text-slate-600">Singapore Public Transport & Rail Telemetry</span>
             </div>
