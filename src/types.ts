@@ -1,4 +1,4 @@
-export type TransportMode = 'all' | 'bus' | 'mrt' | 'carpark';
+export type TransportMode = 'all' | 'bus' | 'mrt';
 
 export type SingaporeRegion = 'All' | 'Central' | 'East' | 'North' | 'North-East' | 'West';
 
@@ -62,8 +62,13 @@ export interface MRTLineInfo {
   color: string;
   bgColor: string;
   textColor: string;
-  status: 'Normal Service' | 'Minor Delay' | 'Heavy Congestion' | 'Track Maintenance';
+  operator?: 'SMRT' | 'SBS Transit';
+  status: 'Normal Service' | 'Minor Delay' | 'Heavy Congestion' | 'Track Maintenance' | 'Service Advisory' | 'Disruption';
   statusDetails?: string;
+  headwayMin?: number;
+  headwayMax?: number;
+  activeTrains?: number;
+  onTimeRate?: number;
 }
 
 export interface MRTStation {
@@ -134,22 +139,4 @@ export interface JourneyResult {
   fare: string;
   steps: JourneyStep[];
   realTimeNotice?: string;
-}
-
-export type CarparkType = 'HDB' | 'URA' | 'Shopping Mall' | 'Airport' | 'Commercial';
-export type CarparkOccupancyStatus = 'Available' | 'Filling Fast' | 'Almost Full' | 'Full';
-
-export interface CarparkInfo {
-  id: string; // e.g. 'ACB', 'HDB-TP1'
-  name: string;
-  address: string;
-  category: CarparkType;
-  region: SingaporeRegion;
-  availableLots: number;
-  totalLots: number;
-  vehicleType: 'Car' | 'Motorcycle' | 'Heavy Vehicle';
-  rateSummary: string;
-  lat: number;
-  lng: number;
-  lastUpdated: string;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, MapPin, Clock, ShieldCheck, Bus, Train, ParkingSquare, LayoutGrid } from 'lucide-react';
+import { RefreshCw, MapPin, Clock, ShieldCheck, Bus, Train, LayoutGrid } from 'lucide-react';
 import { SingaporeRegion, TransportMode } from '../types';
 
 interface HeaderProps {
@@ -114,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 hidden sm:block">
-                Consolidated live bus waiting times, MRT & LRT network tracking & carpark occupancy
+                Consolidated live bus waiting times and MRT & LRT network tracking
               </p>
             </div>
           </div>
@@ -159,19 +159,6 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Train className="w-4 h-4" />
             <span>MRT & LRT Tracking</span>
-          </button>
-
-          <button
-            id="tab-btn-carpark"
-            onClick={() => onTabChange('carpark')}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'carpark'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-            }`}
-          >
-            <ParkingSquare className="w-4 h-4" />
-            <span>Parking Lots</span>
           </button>
         </nav>
       </div>

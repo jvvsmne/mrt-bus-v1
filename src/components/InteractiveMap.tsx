@@ -1,22 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { BusStop, CarparkInfo, MRTStation, SingaporeRegion } from '../types';
-import { getCarparkOccupancyStatus } from '../data/carparkData';
+import { BusStop, MRTStation, SingaporeRegion } from '../types';
 import { MRT_LINES } from '../data/mrtData';
 
 interface InteractiveMapProps {
   busStops: BusStop[];
   mrtStations: MRTStation[];
-  carparks: CarparkInfo[];
   selectedRegion: SingaporeRegion;
   selectedBusStopId: string | null;
   selectedStationCode: string | null;
-  selectedCarparkId: string | null;
   onSelectBusStop: (stop: BusStop) => void;
   onSelectStation: (station: MRTStation) => void;
-  onSelectCarpark: (carpark: CarparkInfo) => void;
-  activeLayer: 'all' | 'bus' | 'mrt' | 'carpark';
-  onChangeActiveLayer: (layer: 'all' | 'bus' | 'mrt' | 'carpark') => void;
+  activeLayer: 'all' | 'bus' | 'mrt';
+  onChangeActiveLayer: (layer: 'all' | 'bus' | 'mrt') => void;
 }
 
 const REGION_COORDINATES: Record<SingaporeRegion, [number, number, number]> = {
@@ -31,14 +27,11 @@ const REGION_COORDINATES: Record<SingaporeRegion, [number, number, number]> = {
 export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   busStops,
   mrtStations,
-  carparks,
   selectedRegion,
   selectedBusStopId,
   selectedStationCode,
-  selectedCarparkId,
   onSelectBusStop,
   onSelectStation,
-  onSelectCarpark,
   activeLayer,
   onChangeActiveLayer,
 }) => {
@@ -92,11 +85,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     } else if (selectedStationCode) {
       const stn = mrtStations.find(s => s.code === selectedStationCode);
       if (stn) mapInstanceRef.current.flyTo([stn.lat, stn.lng], 16, { duration: 0.8 });
-    } else if (selectedCarparkId) {
-      const cp = carparks.find(c => c.id === selectedCarparkId);
-      if (cp) mapInstanceRef.current.flyTo([cp.lat, cp.lng], 16, { duration: 0.8 });
     }
-  }, [selectedBusStopId, selectedStationCode, selectedCarparkId, busStops, mrtStations, carparks]);
+  }, [selectedBusStopId, selectedStationCode, busStops, mrtStations]);
 
   // Render markers according to active layer and filters
   useEffect(() => {
@@ -104,7 +94,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     markersLayerRef.current.clearLayers();
 
-    // 1. MRT Stations Markers
+    // 1. MRT & LRT Stations Markers
     if (activeLayer === 'all' || activeLayer === 'mrt') {
       mrtStations.forEach(station => {
         const isSelected = selectedStationCode === station.code;
@@ -178,60 +168,14 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         markersLayerRef.current?.addLayer(marker);
       });
     }
-
-    // 3. Carparks Markers
-    if (activeLayer === 'all' || activeLayer === 'carpark') {
-      carparks.forEach(cp => {
-        const isSelected = selectedCarparkId === cp.id;
-        const occ = getCarparkOccupancyStatus(cp.availableLots, cp.totalLots);
-        const bgBadge =
-          occ.status === 'Full'
-            ? '#e11d48'
-            : occ.status === 'Almost Full'
-            ? '#ea580c'
-            : occ.status === 'Filling Fast'
-            ? '#2563eb'
-            : '#16a34a';
-
-        const html = `
-          <div class="flex items-center justify-center cursor-pointer transition-transform duration-200 ${
-            isSelected ? 'scale-125 z-50' : 'hover:scale-110'
-          }">
-            <div class="px-2 py-0.5 rounded-full text-white text-[11px] font-bold shadow-md border-2 border-white flex items-center gap-1"
-                 style="background-color: ${bgBadge};">
-              <span>P</span>
-              <span>${cp.availableLots}</span>
-            </div>
-          </div>
-        `;
-
-        const icon = L.divIcon({
-          html,
-          className: 'custom-carpark-pin',
-          iconSize: [48, 24],
-          iconAnchor: [24, 12],
-        });
-
-        const marker = L.marker([cp.lat, cp.lng], { icon });
-        marker.on('click', () => onSelectCarpark(cp));
-        marker.bindTooltip(
-          `<strong>${cp.name}</strong><br><span>${cp.availableLots} / ${cp.totalLots} lots (${occ.status})</span>`,
-          { direction: 'top', offset: [0, -12] }
-        );
-        markersLayerRef.current?.addLayer(marker);
-      });
-    }
   }, [
     activeLayer,
     busStops,
     mrtStations,
-    carparks,
     selectedBusStopId,
     selectedStationCode,
-    selectedCarparkId,
     onSelectBusStop,
     onSelectStation,
-    onSelectCarpark,
   ]);
 
   return (
@@ -243,7 +187,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         <button
           id="btn-layer-all"
           onClick={() => onChangeActiveLayer('all')}
-          className={`px-2.5 py-1 rounded-lg transition-all ${
+          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
             activeLayer === 'all'
               ? 'bg-slate-900 text-white shadow-sm'
               : 'hover:bg-slate-100 text-slate-600'
@@ -254,7 +198,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         <button
           id="btn-layer-bus"
           onClick={() => onChangeActiveLayer('bus')}
-          className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
+          className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
             activeLayer === 'bus'
               ? 'bg-amber-500 text-white shadow-sm'
               : 'hover:bg-slate-100 text-slate-600'
@@ -265,7 +209,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         <button
           id="btn-layer-mrt"
           onClick={() => onChangeActiveLayer('mrt')}
-          className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
+          className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
             activeLayer === 'mrt'
               ? 'bg-rose-600 text-white shadow-sm'
               : 'hover:bg-slate-100 text-slate-600'
@@ -273,36 +217,25 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         >
           <span>🚇</span> MRT & LRT
         </button>
-        <button
-          id="btn-layer-carpark"
-          onClick={() => onChangeActiveLayer('carpark')}
-          className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
-            activeLayer === 'carpark'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'hover:bg-slate-100 text-slate-600'
-          }`}
-        >
-          <span>🅿️</span> Parking
-        </button>
       </div>
 
       {/* Map Legend Floating */}
       <div className="absolute bottom-3 left-3 z-[1000] bg-white/90 backdrop-blur-sm px-3 py-2 rounded-xl text-[11px] text-slate-600 border border-slate-200 shadow-sm flex items-center gap-4 hidden sm:flex">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
-          <span>&gt;35% Lots</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
-          <span>Filling</span>
-        </div>
-        <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
-          <span>&lt;10% Lots</span>
+          <span>Bus Stops</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
-          <span>Full</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block"></span>
+          <span>MRT Stations</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block"></span>
+          <span>LRT Feeders</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-1 ring-white inline-block"></span>
+          <span>Active Selection</span>
         </div>
       </div>
     </div>
