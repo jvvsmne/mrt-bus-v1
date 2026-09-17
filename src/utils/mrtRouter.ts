@@ -19,7 +19,8 @@ function addEdge(u: string, v: string, line: MRTLineId, duration = 2.5) {
 
 // Inter-station connections along lines
 // NSL
-addEdge('Jurong East', 'Woodlands', 'NSL', 18);
+addEdge('Jurong East', 'Choa Chu Kang', 'NSL', 5);
+addEdge('Choa Chu Kang', 'Woodlands', 'NSL', 13);
 addEdge('Woodlands', 'Ang Mo Kio', 'NSL', 16);
 addEdge('Ang Mo Kio', 'Bishan', 'NSL', 4);
 addEdge('Bishan', 'Toa Payoh', 'NSL', 4);
@@ -62,6 +63,7 @@ addEdge('Bishan', 'Buona Vista', 'CCL', 14);
 addEdge('Buona Vista', 'HarbourFront', 'CCL', 12);
 
 // DTL
+addEdge('Bukit Panjang', 'Newton', 'DTL', 14);
 addEdge('Newton', 'Bugis', 'DTL', 6);
 addEdge('Bugis', 'Bayfront', 'DTL', 4);
 addEdge('Bayfront', 'Chinatown', 'DTL', 5);
@@ -71,6 +73,58 @@ addEdge('Chinatown', 'Tampines', 'DTL', 22);
 addEdge('Woodlands', 'Orchard', 'TEL', 24);
 addEdge('Orchard', 'Outram Park', 'TEL', 6);
 addEdge('Outram Park', 'Marina Bay', 'TEL', 5);
+
+// ==========================================
+// BUKIT PANJANG LRT (BPLRT)
+// ==========================================
+addEdge('Choa Chu Kang', 'South View', 'BPLRT', 1.5);
+addEdge('South View', 'Keat Hong', 'BPLRT', 1.5);
+addEdge('Keat Hong', 'Teck Whye', 'BPLRT', 1.5);
+addEdge('Teck Whye', 'Phoenix', 'BPLRT', 1.5);
+addEdge('Phoenix', 'Bukit Panjang', 'BPLRT', 1.5);
+addEdge('Bukit Panjang', 'Petir', 'BPLRT', 1.5);
+addEdge('Petir', 'Pending', 'BPLRT', 1.5);
+addEdge('Pending', 'Bangkit', 'BPLRT', 1.5);
+addEdge('Bangkit', 'Fajar', 'BPLRT', 1.5);
+addEdge('Fajar', 'Segar', 'BPLRT', 1.5);
+addEdge('Segar', 'Jelapang', 'BPLRT', 1.5);
+addEdge('Jelapang', 'Senja', 'BPLRT', 1.5);
+addEdge('Senja', 'Bukit Panjang', 'BPLRT', 1.5);
+
+// ==========================================
+// SENGKANG LRT (SKLRT)
+// ==========================================
+addEdge('Sengkang', 'Compassvale', 'SKLRT', 1.5);
+addEdge('Compassvale', 'Rumbia', 'SKLRT', 1.5);
+addEdge('Rumbia', 'Bakau', 'SKLRT', 1.5);
+addEdge('Bakau', 'Kangkar', 'SKLRT', 1.5);
+addEdge('Kangkar', 'Ranggung', 'SKLRT', 1.5);
+addEdge('Ranggung', 'Sengkang', 'SKLRT', 1.5);
+addEdge('Sengkang', 'Renjong', 'SKLRT', 1.5);
+addEdge('Renjong', 'Tongkang', 'SKLRT', 1.5);
+addEdge('Tongkang', 'Layar', 'SKLRT', 1.5);
+addEdge('Layar', 'Fernvale', 'SKLRT', 1.5);
+addEdge('Fernvale', 'Thanggam', 'SKLRT', 1.5);
+addEdge('Thanggam', 'Sengkang', 'SKLRT', 2);
+
+// ==========================================
+// PUNGGOL LRT (PGLRT)
+// ==========================================
+addEdge('Punggol', 'Cove', 'PGLRT', 1.5);
+addEdge('Cove', 'Meridian', 'PGLRT', 1.5);
+addEdge('Meridian', 'Coral Edge', 'PGLRT', 1.5);
+addEdge('Coral Edge', 'Riviera', 'PGLRT', 1.5);
+addEdge('Riviera', 'Kadaloor', 'PGLRT', 1.5);
+addEdge('Kadaloor', 'Oasis', 'PGLRT', 1.5);
+addEdge('Oasis', 'Damai', 'PGLRT', 1.5);
+addEdge('Damai', 'Punggol', 'PGLRT', 1.5);
+addEdge('Punggol', 'Sam Kee', 'PGLRT', 1.5);
+addEdge('Sam Kee', 'Punggol Point', 'PGLRT', 1.5);
+addEdge('Punggol Point', 'Samudera', 'PGLRT', 1.5);
+addEdge('Samudera', 'Nibong', 'PGLRT', 1.5);
+addEdge('Nibong', 'Sumang', 'PGLRT', 1.5);
+addEdge('Sumang', 'Soo Teck', 'PGLRT', 1.5);
+addEdge('Soo Teck', 'Punggol', 'PGLRT', 1.5);
 
 interface RouteNode {
   station: string;

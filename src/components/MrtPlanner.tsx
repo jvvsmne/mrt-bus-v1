@@ -1,6 +1,21 @@
 import React, { useState, useMemo } from 'react';
-import { Train, ArrowUpDown, Clock, Navigation, AlertTriangle, ShieldCheck, DollarSign, CheckCircle2 } from 'lucide-react';
-import { MRT_LINES, MRT_STATIONS } from '../data/mrtData';
+import {
+  Train,
+  ArrowUpDown,
+  Clock,
+  Navigation,
+  AlertTriangle,
+  ShieldCheck,
+  DollarSign,
+  Activity,
+  Zap,
+  Gauge,
+  Calendar,
+  Users,
+  Info,
+  Layers,
+} from 'lucide-react';
+import { MRT_LINES, MRT_STATIONS, PRO_TRANSIT_TELEMETRY } from '../data/mrtData';
 import { JourneyResult, MRTLineId, MRTStation } from '../types';
 import { calculateMRTRoute } from '../utils/mrtRouter';
 
@@ -21,6 +36,8 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
   const [toStationName, setToStationName] = useState<string>('Marina Bay');
   const [applyPeakFactor, setApplyPeakFactor] = useState<boolean>(true);
   const [simulateIncident, setSimulateIncident] = useState<MRTLineId | ''>('');
+  const [lineFilter, setLineFilter] = useState<'ALL' | 'MRT' | 'LRT'>('ALL');
+  const [showScheduleModal, setShowScheduleModal] = useState<boolean>(false);
 
   // When user clicks a station on map or list
   const activeStation = useMemo(() => {
@@ -43,28 +60,142 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
     );
   }, [fromStationName, toStationName, applyPeakFactor, simulateIncident]);
 
+  // Separate MRT and LRT stations for clean optgroup representation
+  const { mrtStationsList, lrtStationsList } = useMemo(() => {
+    const mrt: MRTStation[] = [];
+    const lrt: MRTStation[] = [];
+    MRT_STATIONS.forEach(stn => {
+      if (stn.isLRT) {
+        lrt.push(stn);
+      } else {
+        mrt.push(stn);
+      }
+    });
+    return { mrtStationsList: mrt, lrtStationsList: lrt };
+  }, []);
+
+  // Filtered lines for display in the status bar
+  const displayedLines = useMemo(() => {
+    return Object.values(MRT_LINES).filter(line => {
+      if (lineFilter === 'ALL') return true;
+      return line.type === lineFilter;
+    });
+  }, [lineFilter]);
+
+  const quickRoutes = [
+    { label: 'West to CBD', from: 'Jurong East', to: 'Marina Bay' },
+    { label: 'BPLRT Feeder', from: 'Choa Chu Kang', to: 'Senja' },
+    { label: 'SKLRT Loop', from: 'Sengkang', to: 'Fernvale' },
+    { label: 'PGLRT Loop', from: 'Punggol', to: 'Riviera' },
+    { label: 'Airport Express', from: 'Bedok', to: 'Changi Airport' },
+    { label: 'North-South Line', from: 'Woodlands', to: 'Raffles Place' },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* MRT Lines Live Network Status Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="flex items-center justify-between mb-3">
+      {/* PRO Operations Command Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-400">
+            <Gauge className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-400">System Headway</div>
+            <div className="text-sm font-black font-mono text-white">
+              {PRO_TRANSIT_TELEMETRY.networkHeadwaySec}s <span className="text-[10px] text-emerald-400 font-normal">Peak</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-400">Reliability (MKBF)</div>
+            <div className="text-sm font-black font-mono text-emerald-400">
+              {PRO_TRANSIT_TELEMETRY.onTimePerformancePercent}%
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400">
+            <Train className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-400">Active Rolling Stock</div>
+            <div className="text-sm font-black font-mono text-white">
+              {PRO_TRANSIT_TELEMETRY.activeRollingStock} <span className="text-[10px] text-slate-400 font-normal">Trains</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-blue-500/20 text-blue-400">
+            <Layers className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-400">Rail Network Scope</div>
+            <div className="text-sm font-black font-mono text-white">
+              6 MRT <span className="text-slate-400 font-normal">+ 3 LRT</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* MRT & LRT Lines Live Status Header with Line Filter Tabs */}
+      <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3.5">
           <div className="flex items-center gap-2">
             <Train className="w-4 h-4 text-rose-600" />
             <h2 className="text-sm font-bold text-slate-900">
-              Singapore Rail Transit Network Live Status
+              Singapore Rail Transit Network Live Status (MRT & LRT)
             </h2>
           </div>
-          <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Real-time feed active
-          </span>
+
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600">
+            <button
+              id="filter-line-all"
+              onClick={() => setLineFilter('ALL')}
+              className={`px-2.5 py-1 rounded-lg transition-all ${
+                lineFilter === 'ALL'
+                  ? 'bg-white text-slate-900 shadow-xs font-bold'
+                  : 'hover:text-slate-900'
+              }`}
+            >
+              All Lines (9)
+            </button>
+            <button
+              id="filter-line-mrt"
+              onClick={() => setLineFilter('MRT')}
+              className={`px-2.5 py-1 rounded-lg transition-all ${
+                lineFilter === 'MRT'
+                  ? 'bg-rose-600 text-white shadow-xs font-bold'
+                  : 'hover:text-slate-900'
+              }`}
+            >
+              MRT Main (6)
+            </button>
+            <button
+              id="filter-line-lrt"
+              onClick={() => setLineFilter('LRT')}
+              className={`px-2.5 py-1 rounded-lg transition-all ${
+                lineFilter === 'LRT'
+                  ? 'bg-emerald-700 text-white shadow-xs font-bold'
+                  : 'hover:text-slate-900'
+              }`}
+            >
+              LRT Feeders (3)
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-          {Object.values(MRT_LINES).map(line => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-2.5">
+          {displayedLines.map(line => {
             const hasSimulatedIncident = simulateIncident === line.id;
             const status = hasSimulatedIncident
-              ? 'Track Maintenance'
+              ? 'Speed Restriction'
               : line.status;
             const isNormal = status === 'Normal Service';
 
@@ -85,18 +216,29 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
                     {line.code}
                   </span>
                   <span
-                    className={`w-2 h-2 rounded-full ${
-                      isNormal ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
+                    className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider ${
+                      line.type === 'LRT'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-slate-200 text-slate-700'
                     }`}
-                  />
+                  >
+                    {line.type}
+                  </span>
                 </div>
-                <div className="text-xs font-bold text-slate-800 truncate">{line.name}</div>
-                <div
-                  className={`text-[10px] font-medium mt-0.5 ${
-                    isNormal ? 'text-emerald-700' : 'text-amber-800 font-bold'
-                  }`}
-                >
-                  {status}
+                <div className="text-xs font-bold text-slate-800 truncate" title={line.name}>
+                  {line.name}
+                </div>
+                <div className="flex items-center justify-between mt-1 text-[10px]">
+                  <span
+                    className={`font-medium ${
+                      isNormal ? 'text-emerald-700' : 'text-amber-800 font-bold'
+                    }`}
+                  >
+                    {status}
+                  </span>
+                  <span className="text-slate-400 font-mono text-[9px]">
+                    {line.operator}
+                  </span>
                 </div>
               </div>
             );
@@ -112,8 +254,32 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Navigation className="w-4 h-4 text-rose-600" />
-                <span>Plan MRT Route & Travel Time</span>
+                <span>Plan Route (MRT & LRT Networks)</span>
               </h3>
+            </div>
+
+            {/* Quick Route Shortcuts */}
+            <div className="mb-4">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Popular Quick Routes
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {quickRoutes.map((qr, idx) => (
+                  <button
+                    key={idx}
+                    id={`btn-quick-route-${idx}`}
+                    onClick={() => {
+                      setFromStationName(qr.from);
+                      setToStationName(qr.to);
+                      const found = MRT_STATIONS.find(s => s.name === qr.from);
+                      if (found) onSelectStation(found);
+                    }}
+                    className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors"
+                  >
+                    {qr.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Origin station selector */}
@@ -132,11 +298,20 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
                   }}
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-900 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
                 >
-                  {MRT_STATIONS.map(stn => (
-                    <option key={stn.code} value={stn.name}>
-                      {stn.name} ({stn.code})
-                    </option>
-                  ))}
+                  <optgroup label="🚇 Heavy Rail MRT Stations (Interchanges & Main Network)">
+                    {mrtStationsList.map(stn => (
+                      <option key={stn.code} value={stn.name}>
+                        {stn.name} ({stn.code})
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="🚝 Feeder LRT Stations (Bukit Panjang, Sengkang, Punggol)">
+                    {lrtStationsList.map(stn => (
+                      <option key={stn.code} value={stn.name}>
+                        {stn.name} ({stn.code}) - LRT
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
               </div>
 
@@ -163,11 +338,20 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
                   onChange={e => setToStationName(e.target.value)}
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-900 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
                 >
-                  {MRT_STATIONS.map(stn => (
-                    <option key={stn.code} value={stn.name}>
-                      {stn.name} ({stn.code})
-                    </option>
-                  ))}
+                  <optgroup label="🚇 Heavy Rail MRT Stations (Interchanges & Main Network)">
+                    {mrtStationsList.map(stn => (
+                      <option key={stn.code} value={stn.name}>
+                        {stn.name} ({stn.code})
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="🚝 Feeder LRT Stations (Bukit Panjang, Sengkang, Punggol)">
+                    {lrtStationsList.map(stn => (
+                      <option key={stn.code} value={stn.name}>
+                        {stn.name} ({stn.code}) - LRT
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
               </div>
             </div>
@@ -176,7 +360,7 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
             <div className="mt-5 pt-4 border-t border-slate-100 space-y-3">
               <label className="flex items-center justify-between cursor-pointer">
                 <span className="text-xs font-semibold text-slate-700">
-                  Include Real-Life Peak Hour Delay
+                  Include Real-Life Peak Hour Delay (+3-7 mins)
                 </span>
                 <input
                   id="toggle-peak-hour"
@@ -189,81 +373,169 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Simulate Incident / Speed Restriction:
+                  Live Dispatch Simulation (Simulate Incident / Speed Limit):
                 </label>
                 <select
                   id="select-incident-sim"
                   value={simulateIncident}
                   onChange={e => setSimulateIncident(e.target.value as MRTLineId)}
-                  className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700"
+                  className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium"
                 >
-                  <option value="">None (Normal real-time conditions)</option>
-                  <option value="NSL">North-South Line (+6m track signal check)</option>
-                  <option value="EWL">East-West Line (+6m platform crowd control)</option>
-                  <option value="NEL">North-East Line (+6m maintenance)</option>
-                  <option value="CCL">Circle Line (+6m heavy volume)</option>
-                  <option value="DTL">Downtown Line (+6m speed limit)</option>
-                  <option value="TEL">Thomson-East Coast Line (+6m)</option>
+                  <option value="">None (Nominal schedule & speed)</option>
+                  <option value="NSL">North-South Line (+6m track circuit maintenance)</option>
+                  <option value="EWL">East-West Line (+6m platform crowd hold)</option>
+                  <option value="NEL">North-East Line (+6m signal system calibration)</option>
+                  <option value="CCL">Circle Line (+6m turn-around bottleneck)</option>
+                  <option value="DTL">Downtown Line (+6m speed restriction)</option>
+                  <option value="TEL">Thomson-East Coast Line (+6m train dwell extension)</option>
+                  <option value="BPLRT">Bukit Panjang LRT (+6m Service A turnaround hold)</option>
+                  <option value="SKLRT">Sengkang LRT (+6m West Loop platform regulation)</option>
+                  <option value="PGLRT">Punggol LRT (+6m East Loop maintenance)</option>
                 </select>
               </div>
             </div>
           </div>
 
-          {/* Station Live Platform Arrival Timings (Origin Station) */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between mb-3">
+          {/* Station Live Platform Arrival Timings & Carriage Crowd Visualizer */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Live Platform Arrivals
+                  Platform Arrivals & Carriage Occupancy
                 </span>
-                <h4 className="text-xs sm:text-sm font-bold text-slate-900">
-                  {activeStation.name} ({activeStation.code})
-                </h4>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                    {activeStation.name} ({activeStation.code})
+                  </h4>
+                  {activeStation.isLRT && (
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      LRT
+                    </span>
+                  )}
+                </div>
               </div>
-              <span
-                className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                  activeStation.crowdLevel === 'High'
-                    ? 'bg-rose-100 text-rose-800'
-                    : 'bg-emerald-100 text-emerald-800'
-                }`}
-              >
-                {activeStation.crowdLevel || 'Moderate'} Crowd
-              </span>
+
+              <div className="flex items-center gap-2">
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                    activeStation.crowdLevel === 'High'
+                      ? 'bg-rose-100 text-rose-800'
+                      : activeStation.crowdLevel === 'Moderate'
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-emerald-100 text-emerald-800'
+                  }`}
+                >
+                  {activeStation.crowdLevel || 'Moderate'} Crowd
+                </span>
+              </div>
             </div>
 
-            <div className="space-y-2">
+            {/* First & Last Train Timings Card */}
+            {activeStation.firstLastTrain && (
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-800 text-[11px]">
+                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                    First / Last Train Operational Timings
+                  </div>
+                  <span className="text-[10px] text-slate-400">Daily Regular</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="bg-white p-2 rounded-lg border border-slate-100">
+                    <span className="text-slate-400 font-medium">Mon - Sat:</span>{' '}
+                    <span className="font-bold text-slate-800">{activeStation.firstLastTrain.weekdayFirst}</span>
+                    <span className="text-slate-400"> to </span>
+                    <span className="font-bold text-slate-800">{activeStation.firstLastTrain.weekdayLast}</span>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg border border-slate-100">
+                    <span className="text-slate-400 font-medium">Sun / PH:</span>{' '}
+                    <span className="font-bold text-slate-800">{activeStation.firstLastTrain.weekendFirst}</span>
+                    <span className="text-slate-400"> to </span>
+                    <span className="font-bold text-slate-800">{activeStation.firstLastTrain.weekendLast}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Platform arrivals with carriage load bars */}
+            <div className="space-y-2.5">
               {activeStation.platformArrivals?.map((platform, idx) => {
                 const lineInfo = MRT_LINES[platform.line];
                 return (
                   <div
                     key={idx}
-                    className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-2 text-xs"
+                    className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-2"
                   >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
-                        style={{ backgroundColor: lineInfo?.color }}
-                      >
-                        {lineInfo?.code}
-                      </span>
-                      <div>
-                        <div className="font-bold text-slate-800 leading-tight">
-                          {platform.platform}
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
+                          style={{ backgroundColor: lineInfo?.color }}
+                        >
+                          {lineInfo?.code}
+                        </span>
+                        <div>
+                          <div className="font-bold text-slate-800 leading-tight">
+                            {platform.platform}
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            Towards {platform.destination}
+                          </div>
                         </div>
-                        <div className="text-[11px] text-slate-500">
-                          Towards {platform.destination}
-                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 font-mono shrink-0">
+                        <span className="px-2.5 py-1 rounded-md bg-slate-900 text-white font-bold text-xs">
+                          {platform.nextTrainMinutes === 0 ? 'Arr' : `${platform.nextTrainMinutes}m`}
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          Next {platform.subsequentTrainMinutes}m
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 font-mono shrink-0">
-                      <span className="px-2 py-0.5 rounded-md bg-slate-900 text-white font-bold text-xs">
-                        {platform.nextTrainMinutes === 0 ? 'Arr' : `${platform.nextTrainMinutes}m`}
-                      </span>
-                      <span className="text-[11px] text-slate-400">
-                        {platform.subsequentTrainMinutes}m
-                      </span>
-                    </div>
+                    {/* Carriage occupancy graphic */}
+                    {platform.carriages && platform.carriages.length > 0 && (
+                      <div className="pt-2 border-t border-slate-200/60">
+                        <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                          <span className="font-semibold text-slate-600">
+                            Live Train Carriage Crowding ({platform.carriages.length} cars):
+                          </span>
+                          <span className="text-slate-400">Head → Tail</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {platform.carriages.map((level, cIdx) => (
+                            <div
+                              key={cIdx}
+                              className="flex-1 text-center py-1 rounded text-[9px] font-bold border transition-colors"
+                              style={{
+                                backgroundColor:
+                                  level === 'High'
+                                    ? '#ffe4e6'
+                                    : level === 'Moderate'
+                                    ? '#fef3c7'
+                                    : '#dcfce7',
+                                borderColor:
+                                  level === 'High'
+                                    ? '#f43f5e'
+                                    : level === 'Moderate'
+                                    ? '#f59e0b'
+                                    : '#22c55e',
+                                color:
+                                  level === 'High'
+                                    ? '#9f1239'
+                                    : level === 'Moderate'
+                                    ? '#92400e'
+                                    : '#166534',
+                              }}
+                              title={`Car ${cIdx + 1}: ${level} crowd`}
+                            >
+                              C{cIdx + 1}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -298,7 +570,7 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
 
                 {/* Delay indicator */}
                 <div className="flex items-center gap-3 text-xs text-slate-300">
-                  <span>Base ride: {journey.baseDurationMinutes}m</span>
+                  <span>Base rail time: {journey.baseDurationMinutes}m</span>
                   {journey.trafficDelayMinutes > 0 && (
                     <span className="text-amber-400 font-semibold">
                       +{journey.trafficDelayMinutes}m real-life delay & interchange walk
@@ -317,7 +589,7 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
               {/* Step by Step Breakdown */}
               <div className="p-5 space-y-4">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Journey Route & Station Guidance
+                  Journey Route & Station Guidance (MRT & LRT)
                 </h4>
 
                 <div className="relative pl-6 border-l-2 border-slate-200 space-y-6">
@@ -350,15 +622,26 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
                                 className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full"
                                 style={{ backgroundColor: lineInfo.color }}
                               >
-                                {lineInfo.code}
+                                {lineInfo.code} ({lineInfo.name})
                               </span>
                             )}
                           </div>
 
                           {step.intermediateStations && step.intermediateStations.length > 0 && (
-                            <div className="mt-2 text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                              <span className="font-semibold text-slate-700">Stations passed: </span>
-                              {step.intermediateStations.join(' → ')}
+                            <div className="mt-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                              <span className="font-semibold text-slate-700">Stations passed ({step.intermediateStations.length}): </span>
+                              <div className="mt-1 flex flex-wrap gap-1.5 items-center">
+                                {step.intermediateStations.map((stnName, sIdx) => (
+                                  <span key={sIdx} className="inline-flex items-center gap-1">
+                                    <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[11px] font-medium text-slate-800">
+                                      {stnName}
+                                    </span>
+                                    {sIdx < (step.intermediateStations?.length || 0) - 1 && (
+                                      <span className="text-slate-400 text-xs">→</span>
+                                    )}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           )}
 
@@ -382,3 +665,4 @@ export const MrtPlanner: React.FC<MrtPlannerProps> = ({
     </div>
   );
 };
+

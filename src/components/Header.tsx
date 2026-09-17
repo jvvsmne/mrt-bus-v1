@@ -106,12 +106,15 @@ export const Header: React.FC<HeaderProps> = ({
                 <h1 className="text-lg font-extrabold tracking-tight text-slate-900 leading-tight">
                   SG Transport & Parking Hub
                 </h1>
-                <span className="bg-rose-50 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-200/60 uppercase tracking-wider">
-                  Live SG
+                <span className="bg-gradient-to-r from-rose-600 to-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs uppercase tracking-wider">
+                  PRO
+                </span>
+                <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200/60 uppercase tracking-wider hidden sm:inline-block">
+                  Live Feed
                 </span>
               </div>
               <p className="text-xs text-slate-500 hidden sm:block">
-                Consolidated live bus waiting times, MRT traffic tracking & carpark occupancy
+                Consolidated live bus waiting times, MRT & LRT network tracking & carpark occupancy
               </p>
             </div>
           </div>
@@ -155,7 +158,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <Train className="w-4 h-4" />
-            <span>MRT Live Tracking</span>
+            <span>MRT & LRT Tracking</span>
           </button>
 
           <button

@@ -109,15 +109,18 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       mrtStations.forEach(station => {
         const isSelected = selectedStationCode === station.code;
         const primaryLine = station.lines[0] || 'NSL';
-        const lineColor = MRT_LINES[primaryLine]?.color || '#d42e12';
+        const lineInfo = MRT_LINES[primaryLine];
+        const lineColor = lineInfo?.color || '#d42e12';
+        const isLRT = station.isLRT || lineInfo?.type === 'LRT';
+        const badgeLabel = station.lines.length > 1 ? 'INT' : isLRT ? 'LRT' : lineInfo?.code || 'MRT';
 
         const html = `
           <div class="group relative flex items-center justify-center cursor-pointer transition-transform duration-200 ${
             isSelected ? 'scale-125 z-50' : 'hover:scale-110'
           }">
-            <div class="w-8 h-8 rounded-full shadow-md flex items-center justify-center font-bold text-[10px] text-white border-2 border-white"
+            <div class="w-8 h-8 rounded-full shadow-md flex items-center justify-center font-bold text-[9px] text-white border-2 border-white"
                  style="background-color: ${lineColor};">
-              ${station.lines.length > 1 ? 'INT' : MRT_LINES[primaryLine]?.code || 'MRT'}
+              ${badgeLabel}
             </div>
             ${
               isSelected
@@ -137,7 +140,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         const marker = L.marker([station.lat, station.lng], { icon });
         marker.on('click', () => onSelectStation(station));
         marker.bindTooltip(
-          `<strong>${station.name}</strong><br><span style="color:#64748b; font-size:11px;">Lines: ${station.lines.join(', ')}</span>`,
+          `<strong>${station.name} (${station.code})</strong><br><span style="color:#64748b; font-size:11px;">${isLRT ? 'LRT Feeder Line' : 'MRT Main Line'} &bull; ${station.lines.join(', ')}</span>`,
           { direction: 'top', offset: [0, -16] }
         );
         markersLayerRef.current?.addLayer(marker);
@@ -268,7 +271,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               : 'hover:bg-slate-100 text-slate-600'
           }`}
         >
-          <span>🚇</span> MRT
+          <span>🚇</span> MRT & LRT
         </button>
         <button
           id="btn-layer-carpark"

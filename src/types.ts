@@ -41,12 +41,24 @@ export interface BusStop {
   services: string[]; // ['65', '143', '190', '14']
 }
 
-export type MRTLineId = 'NSL' | 'EWL' | 'NEL' | 'CCL' | 'DTL' | 'TEL';
+export type MRTLineId =
+  | 'NSL'
+  | 'EWL'
+  | 'NEL'
+  | 'CCL'
+  | 'DTL'
+  | 'TEL'
+  | 'BPLRT'
+  | 'SKLRT'
+  | 'PGLRT';
+
+export type RailType = 'MRT' | 'LRT';
 
 export interface MRTLineInfo {
   id: MRTLineId;
   name: string;
   code: string;
+  type: RailType;
   color: string;
   bgColor: string;
   textColor: string;
@@ -55,21 +67,51 @@ export interface MRTLineInfo {
 }
 
 export interface MRTStation {
-  code: string; // e.g. 'NS24/NE6/CC1'
-  name: string; // e.g. 'Dhoby Ghaut'
+  code: string; // e.g. 'NS24/NE6/CC1', 'BP6/DT1', 'STC/NE16'
+  name: string; // e.g. 'Dhoby Ghaut', 'Bukit Panjang', 'Sengkang'
   lines: MRTLineId[];
   lat: number;
   lng: number;
   region: SingaporeRegion;
   isInterchange: boolean;
+  isLRT?: boolean;
   crowdLevel?: 'Low' | 'Moderate' | 'High';
+  firstLastTrain?: {
+    weekdayFirst: string;
+    weekdayLast: string;
+    weekendFirst: string;
+    weekendLast: string;
+  };
   platformArrivals?: {
     platform: string;
     destination: string;
     line: MRTLineId;
     nextTrainMinutes: number;
     subsequentTrainMinutes: number;
+    carriages?: ('Low' | 'Moderate' | 'High')[];
   }[];
+}
+
+export interface BusRouteStop {
+  stopId: string;
+  stopName: string;
+  road: string;
+  sequence: number;
+  currentBuses?: {
+    busId: string;
+    load: BusLoad;
+    type: BusType;
+  }[];
+}
+
+export interface BusServiceDetail {
+  serviceNo: string;
+  operator: BusOperator;
+  origin: string;
+  destination: string;
+  frequencyMinutes: string;
+  type: 'Trunk' | 'Feeder' | 'Express';
+  stops: BusRouteStop[];
 }
 
 export interface JourneyStep {
